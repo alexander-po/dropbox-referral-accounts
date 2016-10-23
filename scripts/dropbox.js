@@ -5,7 +5,9 @@ var casper = require('casper').create({
             userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.106 Safari/537.36',
             loadImages: false,
             loadPlugins: false
-        }
+        },
+        verbose: true,
+        logLevel: 'debug'
     }),
     account,
     action,
@@ -63,33 +65,33 @@ actions = {
             this.sendKeys(formField +'[name="password"]', account.password);
 
             this.wait(250);
-            this.waitForSelector(formFirstNameHiddenLabel, function () {
-                this.mouse.move(formField + '[name="tos_agree"]');
-                this.wait(35);
-                // As we evaluate code with jQuery, it's better to wait for JS to be loaded to handle this one.
-                var termsAndConditionsIsChecked = this.evaluate(function (formField) {
-                    return jQuery(formField + '[name="tos_agree"]:checked').length === 1;
-                }, formField);
+            this.mouse.move(formField + '[name="tos_agree"]');
+            this.wait(35);
+            // As we evaluate code with jQuery, it's better to wait for JS to be loaded to handle this one.
+            var termsAndConditionsIsChecked = this.evaluate(function (formField) {
+                return jQuery(formField + '[name="tos_agree"]:checked').length === 1;
+            }, formField);
 
-                if (!termsAndConditionsIsChecked) {
-                    this.click(formField + '[name="tos_agree"]');
-                }
-                this.mouse.move(formButton);
-                this.wait(40);
-                this.mouse.click(formButton);
+            if (!termsAndConditionsIsChecked) {
+                this.click(formField + '[name="tos_agree"]');
+            }
+            this.mouse.move(formButton);
+            this.wait(40);
+            this.click(formButton);
+            casper.log(formButton);
+
+            this.wait(250);
+            safeExit(this, 1, 'Some reason');
+            this.waitForUrl('https://www.dropbox.com/install?os=lnx', function () {
+                var selector = '//*[@id="linux-install-content"]/h2',
+                    text = 'Dropbox Headless Install via command line';
 
                 this.wait(250);
-                this.waitForUrl('https://www.dropbox.com/install?os=lnx', function () {
-                    var selector = '//*[@id="linux-install-content"]/h2',
-                        text = 'Dropbox Headless Install via command line';
+                this.waitForSelector(selectorContains(selector, text), function () {
+                    safeExit(this, 0, 'The account was created successfully !');
 
-                    this.wait(250);
-                    this.waitForSelector(selectorContains(selector, text), function () {
-                        safeExit(this, 0, 'The account was created successfully !');
-
-                    }, function () { safeExit(this, 1, 'Timeout when looking for the flash message asserting the account creation.'); });
-                }, function () { safeExit(this, 1, 'Timeout when waiting for the Dropbox installation page to load.'); });
-            }, function () { safeExit(this, 1, 'Timeout when checking that the form\'s label disappeared (meaning the JS has been loaded).'); });
+                }, function () { safeExit(this, 1, 'Timeout when looking for the flash message asserting the account creation.'); });
+            }, function () { safeExit(this, 1, 'Timeout when waiting for the Dropbox installation page to load.'); });
         }, function () { safeExit(this, 1, 'Timeout when looking for the creation form\'s button.'); });
     },
     link: function () {
