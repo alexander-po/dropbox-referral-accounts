@@ -5,13 +5,16 @@ var casper = require('casper').create({
             userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.106 Safari/537.36',
             loadImages: false,
             loadPlugins: false
-        }
+        },
+        verbose: true,
+        logLevel: 'debug'
     }),
     account,
     action,
     actions,
     dropboxUrl,
     timeout;
+var mouse = require("mouse").create(casper);
 
 if ( ! casper.cli.has(7) || casper.cli.has(8)) {
     casper.log('Usage: manage-account.js <action> <dropboxUrl> <accountId> <accountFirstName> <accountLastName> <accountEmail> <accountPassword> <timeout>');
@@ -48,37 +51,47 @@ actions = {
 
         this.wait(250);
         this.waitForSelector(formButton, function () {
+            this.mouse.move(formField + '[name="fname"]');
+            this.wait(35);
             this.sendKeys(formField +'[name="fname"]', account.firstName);
+            this.mouse.move(formField + '[name="lname"]');
+            this.wait(40);
             this.sendKeys(formField +'[name="lname"]', account.lastName);
+            this.mouse.move(formField + '[name="email"]');
+            this.wait(35);
             this.sendKeys(formField +'[name="email"]', account.email);
+            this.mouse.move(formField + '[name="password"]');
+            this.wait(40);
             this.sendKeys(formField +'[name="password"]', account.password);
 
             this.wait(250);
-            this.waitForSelector(formFirstNameHiddenLabel, function () {
+            this.mouse.move(formField + '[name="tos_agree"]');
+            this.wait(35);
+            // As we evaluate code with jQuery, it's better to wait for JS to be loaded to handle this one.
+            var termsAndConditionsIsChecked = this.evaluate(function (formField) {
+                return jQuery(formField + '[name="tos_agree"]:checked').length === 1;
+            }, formField);
 
-                // As we evaluate code with jQuery, it's better to wait for JS to be loaded to handle this one.
-                var termsAndConditionsIsChecked = this.evaluate(function (formField) {
-                    return jQuery(formField + '[name="tos_agree"]:checked').length === 1;
-                }, formField);
+            if (!termsAndConditionsIsChecked) {
+                this.click(formField + '[name="tos_agree"]');
+            }
+            this.mouse.move(formButton);
+            this.wait(40);
+            this.click(formButton);
+            casper.log(formButton);
 
-                if (!termsAndConditionsIsChecked) {
-                    this.click(formField + '[name="tos_agree"]');
-                }
-
-                this.click(formButton);
+            this.wait(250);
+            safeExit(this, 1, 'Some reason');
+            this.waitForUrl('https://www.dropbox.com/install?os=lnx', function () {
+                var selector = '//*[@id="linux-install-content"]/h2',
+                    text = 'Dropbox Headless Install via command line';
 
                 this.wait(250);
-                this.waitForUrl('https://www.dropbox.com/install?os=lnx', function () {
-                    var selector = '//*[@id="linux-install-content"]/h2',
-                        text = 'Dropbox Headless Install via command line';
+                this.waitForSelector(selectorContains(selector, text), function () {
+                    safeExit(this, 0, 'The account was created successfully !');
 
-                    this.wait(250);
-                    this.waitForSelector(selectorContains(selector, text), function () {
-                        safeExit(this, 0, 'The account was created successfully !');
-
-                    }, function () { safeExit(this, 1, 'Timeout when looking for the flash message asserting the account creation.'); });
-                }, function () { safeExit(this, 1, 'Timeout when waiting for the Dropbox installation page to load.'); });
-            }, function () { safeExit(this, 1, 'Timeout when checking that the form\'s label disappeared (meaning the JS has been loaded).'); });
+                }, function () { safeExit(this, 1, 'Timeout when looking for the flash message asserting the account creation.'); });
+            }, function () { safeExit(this, 1, 'Timeout when waiting for the Dropbox installation page to load.'); });
         }, function () { safeExit(this, 1, 'Timeout when looking for the creation form\'s button.'); });
     },
     link: function () {
