@@ -1,32 +1,27 @@
 #!/bin/bash
-ACCOUNT_ID=$1
-EMAIL=$2
-FIRST=$3
-LAST=$4
-RUN_OPTIONS="--ssl-protocol=any --ignore-ssl-errors=true --web-security=false --cookies-file=/tmp/cookies.txt"
 
 echo "Read configuration file"
 source /vagrant/config/config.cfg
 
+RESP=$(curl -s "https://api.randomuser.me/?inc=email,name&nat=${location}&format=csv&noinfo" | sed -n '2p')
+FIRST=$(echo $RESP | cut -d',' -f 2)
+LAST=$(echo $RESP | cut -d',' -f 3)
+
 # Add Anonymity
 if [ "${anonymity}" = true ] ; then
-    bash /vagrant/scripts/anonymity.sh
-    TOR_INSTALL_STATUS=$?
-    RUN_OPTIONS="${RUN_OPTIONS} --proxy=127.0.0.1:9050 --proxy-type=socks5"
+    echo "Starting TOR"
+    sudo systemctl start tor
+    cd ~ && wget -O - "https://www.dropbox.com/download/?plat=lnx.x86_64" | tar zxf -
+    sleep 1.5s
 
     echo "Check what the IP address is through TOR proxy"
     curl -sS --socks5 127.0.0.1:9050 https://api.ipify.org/?format=json
     GET_IP_STATUS=$?
 
-    if [ "${TOR_INSTALL_STATUS}" -gt 0 ] || [ "${GET_IP_STATUS}" -gt 0 ] ; then
+    if [ "${GET_IP_STATUS}" -gt 0 ] ; then
         echo "TOR was not installed or configured properly. Aborting."
         exit 1;
     fi
-fi
-
-# Add logging flags
-if [ "none" != "${logging}" ] ; then
-    RUN_OPTIONS="${RUN_OPTIONS} --verbose --log-level=${logging}"
 fi
 
 # Fix screenshots path for CasperJS
@@ -36,13 +31,15 @@ echo "Removing previous runs' screenshots."
 rm -f /vagrant/screenshots/*.png
 
 # CasperJS command
-echo "Run casperJS with options : ${RUN_OPTIONS}"
-RUN="casperjs ${RUN_OPTIONS} /vagrant/scripts/dropbox.js"
+echo "Run python for account."
+RUN="python3 /vagrant/scripts/dropbox.py"
+RANDOM_NUMBER=$((1 + RANDOM % 99999))
+EMAIL="${account_email/\%d/${RANDOM_NUMBER}}"
 
 # Create the account
 if [ "${action}" == "create" ] || [ "${action}" == "both" ] ; then
-    echo "Create the referral account #${ACCOUNT_ID} (${EMAIL}) using : ${dropbox_referral_url} !"
-    ${RUN} create ${dropbox_referral_url} ${ACCOUNT_ID} ${FIRST} ${LAST} ${EMAIL} ${account_password} "${timeout}" || true
+    echo "Create the referral account (${EMAIL}) using : ${dropbox_referral_url} !"
+    ${RUN} create "${dropbox_referral_url}" "${FIRST}" "${LAST}" "${EMAIL}" "${account_password}" ${timeout} || true
 fi
 
 # Link the account
@@ -61,8 +58,8 @@ if [ "${action}" == "link" ] || [ "${action}" == "both" ] ; then
             # Get only the last line
             DROPBOX_LINK_URL=$(echo "${DROPBOX_LINK_URL}" | tail -n1)
 
-            echo "Link the referral account #${ACCOUNT_ID} (${EMAIL}) using : ${DROPBOX_LINK_URL} !"
-            ${RUN} link ${DROPBOX_LINK_URL} ${ACCOUNT_ID} ${FIRST} ${LAST} ${EMAIL} ${account_password} "${timeout}" || true
+            echo "Link the referral account (${EMAIL}) using : ${DROPBOX_LINK_URL} !"
+            ${RUN} link "${DROPBOX_LINK_URL}" "${FIRST}" "${LAST}" "${EMAIL}" "${account_password}" ${timeout} || true
 
             break
         fi
