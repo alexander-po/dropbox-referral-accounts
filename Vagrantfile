@@ -14,6 +14,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.vm.provision "shell" do |s|
         s.path = "scripts/manage-account.sh"
         s.privileged = false
+        s.args = ["#{ENV['FIRST']}", "#{ENV['LAST']}", "#{ENV['EMAIL']}"]
     end
 
 end
