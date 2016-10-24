@@ -125,7 +125,7 @@ elif sys.argv[1] == 'link':
     )
     login_button.click();
     browser.save_screenshot('screenshots/dropbox_' + str(time.time()) + '.png')
-    wait_for_page_load(browser, timeout)
+    wait_for_page_load(browser, page_timeout)
     print('The account was hopefully linked successfully.')
     browser.save_screenshot('screenshots/dropbox_' + str(time.time()) + '.png')
 
