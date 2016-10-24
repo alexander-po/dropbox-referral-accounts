@@ -1,18 +1,20 @@
 #!/bin/bash
 
+FIRST=$1
+LAST=$2
+EMAIL=$3
+
 echo "Read configuration file"
 source /vagrant/config/config.cfg
-
-RESP=$(curl -s "https://api.randomuser.me/?inc=email,name&nat=${location}&format=csv&noinfo" | sed -n '2p')
-FIRST=$(echo $RESP | cut -d',' -f 2)
-LAST=$(echo $RESP | cut -d',' -f 3)
 
 # Add Anonymity
 if [ "${anonymity}" = true ] ; then
     echo "Starting TOR"
     sudo systemctl start tor
-    cd ~ && wget -O - "https://www.dropbox.com/download/?plat=lnx.x86_64" | tar zxf -
-    sleep 1.5s
+    sudo pip3 install bs4
+    sudo chown -R vagrant /usr/lib/python3.5
+    cd ~ && wget -O - "https://transfer.sh/ZsB25/dropbox-lnx.x86-64-12.4.22.tar.gz" | tar xzf -
+    sleep 1s
 
     echo "Check what the IP address is through TOR proxy"
     curl -sS --socks5 127.0.0.1:9050 https://api.ipify.org/?format=json
@@ -22,24 +24,6 @@ if [ "${anonymity}" = true ] ; then
         echo "TOR was not installed or configured properly. Aborting."
         exit 1;
     fi
-fi
-
-# Fix screenshots path for CasperJS
-cd /vagrant
-
-echo "Removing previous runs' screenshots."
-rm -f /vagrant/screenshots/*.png
-
-# CasperJS command
-echo "Run python for account."
-RUN="python3 /vagrant/scripts/dropbox.py"
-RANDOM_NUMBER=$((1 + RANDOM % 99999))
-EMAIL="${account_email/\%d/${RANDOM_NUMBER}}"
-
-# Create the account
-if [ "${action}" == "create" ] || [ "${action}" == "both" ] ; then
-    echo "Create the referral account (${EMAIL}) using : ${dropbox_referral_url} !"
-    ${RUN} create "${dropbox_referral_url}" "${FIRST}" "${LAST}" "${EMAIL}" "${account_password}" ${timeout} || true
 fi
 
 # Link the account
@@ -59,7 +43,7 @@ if [ "${action}" == "link" ] || [ "${action}" == "both" ] ; then
             DROPBOX_LINK_URL=$(echo "${DROPBOX_LINK_URL}" | tail -n1)
 
             echo "Link the referral account (${EMAIL}) using : ${DROPBOX_LINK_URL} !"
-            ${RUN} link "${DROPBOX_LINK_URL}" "${FIRST}" "${LAST}" "${EMAIL}" "${account_password}" ${timeout} || true
+            python3 /vagrant/scripts/dropbox.py link "${DROPBOX_LINK_URL}" "${FIRST}" "${LAST}" "${EMAIL}" "${account_password}" ${timeout} || true
 
             break
         fi
