@@ -33,7 +33,7 @@ function create_box() {
     # Create the account
     if [ "${action}" == "create" ] || [ "${action}" == "both" ] ; then
         echo "Create the referral account (${EMAIL}) using : ${dropbox_referral_url} !"
-        python3 /home/shane/dropbox-referral-accounts/scripts/dropbox.py create "${dropbox_referral_url}" "${FIRST}" "${LAST}" "${EMAIL}" "${account_password}" ${timeout} || true
+        python3 ~/dropbox-referral-accounts/scripts/dropbox.py create "${dropbox_referral_url}" "${FIRST}" "${LAST}" "${EMAIL}" "${account_password}" ${timeout} || true
     fi
 
 
