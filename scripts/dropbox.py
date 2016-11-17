@@ -18,7 +18,7 @@ if sys.argv[1] == 'link':
     display.start()
 
 options = webdriver.ChromeOptions()
-options.add_argument('--proxy-server=socks5://127.0.0.1:9050')
+#options.add_argument('--proxy-server=socks5://127.0.0.1:9050')
 browser = webdriver.Chrome(chrome_options=options)
 
 browser.set_window_size(1920, 1080)
@@ -82,7 +82,7 @@ if sys.argv[1] == 'create':
                 if captcha_checkbox.get_attribute('aria-checked') == 'true':
                     print('Captcha filled out successfully.')
                     break
-                time.sleep(3)
+                time.sleep(2)
         browser.switch_to.default_content()
         login_button.click()
         try:
@@ -126,6 +126,7 @@ elif sys.argv[1] == 'link':
     login_button.click();
     browser.save_screenshot('screenshots/dropbox_' + str(time.time()) + '.png')
     print('The account was hopefully linked successfully.')
+    time.sleep(5)
     browser.save_screenshot('screenshots/dropbox_' + str(time.time()) + '.png')
 
     while True:

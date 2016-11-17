@@ -16,5 +16,4 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         s.privileged = false
         s.args = ["#{ENV['FIRST']}", "#{ENV['LAST']}", "#{ENV['EMAIL']}"]
     end
-
 end

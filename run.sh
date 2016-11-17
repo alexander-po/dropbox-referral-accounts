@@ -17,22 +17,10 @@ function create_box() {
     local ACCOUNT_ID=$1
     local MAC_ADDRESS=$(generate_mac_address_for_virtualbox)
     echo "Read configuration file"
-    source ~/dropbox-referral-accounts/config/config.cfg
-
-    # Add Anonymity
-    if [ "${anonymity}" = true ] ; then
-        echo "Check what the Main Linux IP address is through TOR proxy"
-        curl -sS --socks5 127.0.0.1:9050 https://api.ipify.org/?format=json
-        GET_IP_STATUS=$?
-
-        if [ "${GET_IP_STATUS}" -gt 0 ] ; then
-            echo "TOR was not installed or configured properly. Aborting."
-            exit 1;
-        fi
-    fi
+    source ./config/config.cfg
 
     echo "Removing previous runs' screenshots."
-    rm -f ~/dropbox-referral-accounts/screenshots/*.png
+    rm -f ./screenshots/*.png
     echo "Generating fake details..."
     RESP=$(curl -s "https://api.randomuser.me/?inc=email,name&nat=${location}&format=csv&noinfo" | sed -n '2p')
     FIRST=$(echo $RESP | cut -d',' -f 2)
@@ -45,7 +33,7 @@ function create_box() {
     # Create the account
     if [ "${action}" == "create" ] || [ "${action}" == "both" ] ; then
         echo "Create the referral account (${EMAIL}) using : ${dropbox_referral_url} !"
-        python3 ~/dropbox-referral-accounts/scripts/dropbox.py create "${dropbox_referral_url}" "${FIRST}" "${LAST}" "${EMAIL}" "${account_password}" ${timeout} || true
+        python3 /home/shane/dropbox-referral-accounts/scripts/dropbox.py create "${dropbox_referral_url}" "${FIRST}" "${LAST}" "${EMAIL}" "${account_password}" ${timeout} || true
     fi
 
 

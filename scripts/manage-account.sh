@@ -9,21 +9,12 @@ source /vagrant/config/config.cfg
 
 # Add Anonymity
 if [ "${anonymity}" = true ] ; then
+    cd ~ && tar xzf /vagrant/dropbox.tar.gz
     echo "Starting TOR"
     sudo systemctl start tor
     sudo pip3 install bs4
     sudo chown -R vagrant /usr/lib/python3.5
-    cd ~ && wget -O - "https://transfer.sh/ZsB25/dropbox-lnx.x86-64-12.4.22.tar.gz" | tar xzf -
     sleep 1s
-
-    echo "Check what the IP address is through TOR proxy"
-    curl -sS --socks5 127.0.0.1:9050 https://api.ipify.org/?format=json
-    GET_IP_STATUS=$?
-
-    if [ "${GET_IP_STATUS}" -gt 0 ] ; then
-        echo "TOR was not installed or configured properly. Aborting."
-        exit 1;
-    fi
 fi
 
 # Link the account
